@@ -117,7 +117,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'publishing failed' }
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/lai.exe
