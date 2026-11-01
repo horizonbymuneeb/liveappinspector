@@ -6,7 +6,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Documentation website** at <https://horizonbymuneeb.github.io/liveappinspector/>
+  (MkDocs Material, dark/light, full-text search). It is generated from the
+  repository markdown by `scripts/build-docs-site.py`, so there is a single source
+  of truth, and `.github/workflows/docs.yml` builds it with `mkdocs build --strict`
+  so a broken link or nav entry fails the deploy.
 
 ## [1.0.1] - 2026-11-01
 

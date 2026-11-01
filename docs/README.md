@@ -1,5 +1,7 @@
 # Documentation
 
+**Website version (searchable):** <https://horizonbymuneeb.github.io/liveappinspector/>
+
 Everything an operator, an examiner, a reviewer and a contributor needs. Start
 where you are:
 
