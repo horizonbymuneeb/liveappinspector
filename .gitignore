@@ -2,6 +2,10 @@
 /engine/target/
 /dist/
 
+# Generated docs site (mkdocs)
+/site-src/
+/site/
+
 # Local exhibits and test scratch (may contain host artifacts)
 /out/
 *.json.tmp

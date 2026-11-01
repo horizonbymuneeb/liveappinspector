@@ -4,6 +4,7 @@
 [![release](https://img.shields.io/github/v/release/horizonbymuneeb/liveappinspector?display_name=tag&sort=semver)](https://github.com/horizonbymuneeb/liveappinspector/releases/latest)
 [![downloads](https://img.shields.io/github/downloads/horizonbymuneeb/liveappinspector/total)](https://github.com/horizonbymuneeb/liveappinspector/releases)
 [![license](https://img.shields.io/github/license/horizonbymuneeb/liveappinspector)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-GitHub%20Pages-4c6ef5)](https://horizonbymuneeb.github.io/liveappinspector/)
 [![platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20x64-0078D6)](#)
 [![rust](https://img.shields.io/badge/rust-1.75%2B-orange)](https://github.com/horizonbymuneeb/liveappinspector/blob/main/engine/Cargo.toml)
 
@@ -67,9 +68,13 @@ Verify before you run it — this tool reads your machine, so trust nothing unve
 
 ## Documentation
 
+**Read it as a website:** <https://horizonbymuneeb.github.io/liveappinspector/> —
+searchable, dark/light, built from this repository on every push.
+
 Full index: [docs/README.md](docs/README.md). Every relative link and heading
-anchor is checked in CI ([scripts/check-docs.py](https://github.com/horizonbymuneeb/liveappinspector/blob/main/scripts/check-docs.py)), so the
-map below cannot rot.
+anchor is checked in CI ([scripts/check-docs.py](https://github.com/horizonbymuneeb/liveappinspector/blob/main/scripts/check-docs.py))
+and the site itself is built with `mkdocs build --strict`, so the map below cannot
+rot.
 
 | Document | What it answers |
 |---|---|

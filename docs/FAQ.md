@@ -12,7 +12,7 @@ Not a bug. The binary is unsigned and Smart App Control (`{0283ac0f-fff1-49ae-ad
 or a WDAC/AppLocker policy refuses to load it. A self-signed certificate does not
 help: SAC requires a trusted-publisher chain with cloud reputation.
 
-Diagnose and fix: [DEPLOYMENT.md §2](DEPLOYMENT.md#2-windows-blocked-the-app--smart-app-control--wdac--applocker).
+Diagnose and fix: [DEPLOYMENT.md](DEPLOYMENT.md) (section 2, "Windows blocked the app").
 Options: run on a test VM / a host without SAC, sign with a real code-signing
 certificate, or disable SAC (one-way, device-owner decision).
 

@@ -1,0 +1,92 @@
+# Documentation site configuration (GitHub Pages, built in CI).
+#
+# Source of truth is the repository itself: `python scripts/build-docs-site.py`
+# stages README/docs/schema/screenshots into site-src/ (see .github/workflows/docs.yml).
+# Nothing here is committed twice.
+site_name: LiveAppInspector
+site_description: Point-and-shoot live application forensics for Windows (DFIR)
+site_url: https://horizonbymuneeb.github.io/liveappinspector/
+repo_url: https://github.com/horizonbymuneeb/liveappinspector
+repo_name: horizonbymuneeb/liveappinspector
+edit_uri: edit/main/
+copyright: MIT licensed - © 2026 Muneeb Anjum and contributors
+docs_dir: site-src
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: light blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Documentation index: docs/README.md
+  - Using it:
+      - FAQ & troubleshooting: docs/FAQ.md
+      - Deployment (SAC/WDAC, elevation): docs/DEPLOYMENT.md
+  - Reports:
+      - Schema contract: docs/SCHEMA.md
+      - Forensic notes (provenance): docs/FORENSIC_NOTES.md
+      - Chain of custody & seal: docs/CHAIN_OF_CUSTODY.md
+      - JSON Schema: schema/report-v1.schema.json
+  - Project:
+      - Architecture: ARCHITECTURE.md
+      - Contributing: CONTRIBUTING.md
+      - Security policy: SECURITY.md
+      - Code of conduct: CODE_OF_CONDUCT.md
+      - Releasing: docs/RELEASING.md
+      - Changelog: CHANGELOG.md
+      - Sample & redaction guide: samples/README.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/horizonbymuneeb/liveappinspector

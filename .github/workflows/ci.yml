@@ -61,6 +61,16 @@ jobs:
           python scripts/check-docs.py
           if ($LASTEXITCODE -ne 0) { throw 'documentation has broken links or anchors' }
 
+      - name: Documentation site build (strict)
+        shell: pwsh
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: |
+          python -m pip install --quiet "mkdocs-material>=9.5,<10"
+          python scripts/build-docs-site.py
+          python -m mkdocs build --strict
+          if ($LASTEXITCODE -ne 0) { throw 'docs site build failed (broken link or nav entry)' }
+
   # Builds the shipped binary and proves it works by running the acceptance suite.
   acceptance:
     name: build + end-to-end acceptance

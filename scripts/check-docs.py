@@ -16,7 +16,9 @@ import os
 import re
 import sys
 
-SKIP_DIRS = {"target", ".git", "dist", "node_modules"}
+# dist/ and site-src/ are generated copies of the real docs; checking them
+# would double-report (and MkDocs itself validates the site in --strict mode).
+SKIP_DIRS = {"target", ".git", "dist", "node_modules", "site-src", "site"}
 
 
 def slugify(text):
