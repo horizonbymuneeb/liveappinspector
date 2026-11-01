@@ -56,7 +56,16 @@ try {
     Move-Item $inner $InstallDir
 
     $exe = Join-Path $InstallDir 'lai.exe'
-    & $exe --version
+    # A code-integrity policy (Smart App Control / WDAC / AppLocker) can refuse to
+    # *execute* an unsigned binary even though the install itself succeeded. Report
+    # that clearly instead of failing the install with a cryptic error.
+    try {
+        & $exe --version
+    }
+    catch {
+        Write-Warning "installed, but this host refused to execute the binary: $($_.Exception.Message)"
+        Write-Warning 'If Smart App Control or WDAC is enforced, sign the binary or use a test VM (docs/DEPLOYMENT.md).'
+    }
 
     if ($AddToPath) {
         $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
