@@ -262,13 +262,24 @@ Test-Case 'module F: SHA-256 matches certutil (independent tool)' {
     "both = $($rep.binary.sha256.Substring(0,32))...  volume=$($rep.binary.volume_serial) index=$($rep.binary.file_index)"
 }
 
-Test-Case 'module F: no section degraded on a normal user process' {
-    $degraded = $rep.integrity.sections_degraded
-    if ($degraded -ne 0) {
-        $detail = ($rep.integrity.warnings | Where-Object { $_ -match '(denied|error)' } | Select-Object -First 3) -join ' | '
-        throw "$degraded degraded sections: $detail"
+Test-Case 'no section refused or failed on a normal user process' {
+    # A `partial` section is legitimate (truncation, an unresolvable object name,
+    # a DNS budget); a `denied`/`error` section on our own user process is not.
+    $sections = @('process', 'user_context', 'genealogy', 'network', 'modules', 'handles', 'registry', 'services', 'binary')
+    $refused = @()
+    $partial = @()
+    foreach ($name in $sections) {
+        $status = $rep.$name.meta.status
+        if ($status -in @('denied', 'error')) { $refused += "$name=$status" }
+        elseif ($status -eq 'partial') { $partial += $name }
     }
-    "0 degraded, $($rep.integrity.custody_log.Count) custody events"
+    if ($refused.Count -gt 0) { throw ('sections refused or failed: ' + ($refused -join ', ')) }
+    if ($partial.Count -gt 0) {
+        "0 denied/error, partial: $($partial -join ', ') ($($rep.integrity.custody_log.Count) custody events)"
+    }
+    else {
+        "0 degraded, $($rep.integrity.custody_log.Count) custody events"
+    }
 }
 
 Test-Case 'custody log is ordered and gap-free' {
@@ -648,8 +659,11 @@ Test-Case 'GET /api/processes + hotkey poll' {
     "processes=$($p.processes.Count) hotkey_pending=$($h.pending)"
 }
 
+if ($SkipPicker) {
+    Record 'POST /api/pick: click -> acquisition through the dashboard' 'SKIP' '-SkipPicker (needs an interactive desktop)'
+}
+else {
 Test-Case 'POST /api/pick: click -> acquisition through the dashboard' {
-    if ($SkipPicker) { throw 'picker disabled' }
     if (-not $targetHwnd) { throw 'no target window available (picker test was skipped)' }
     $targetTitle2 = "LAI-E2E-HTTP-$([guid]::NewGuid().ToString('N').Substring(0,6))"
     $tmpScript = Join-Path $work 'target2.ps1'
@@ -686,6 +700,7 @@ Test-Case 'POST /api/pick: click -> acquisition through the dashboard' {
     if ($res.report.process.pid -ne $t2.Id) { throw "picked pid $($res.report.process.pid), expected $($t2.Id)" }
     if (-not $t2.HasExited) { try { $t2.Kill() } catch {} }
     "picked pid=$($res.report.process.pid) via=$($res.target.via) seal=$($res.report.integrity.report_sha256.Substring(0,12)) duration=$($res.report.tool.duration_ms)ms"
+}
 }
 
 Test-Case 'POST /api/shutdown stops the engine cleanly' {
