@@ -102,14 +102,23 @@ Both are portable installers: no MSI, no registry writes, `lai` on `PATH`.
    schema version and document the migration — a silent semantic change in a
    forensic tool is worse than a breaking one.
 
-## 7. Repository settings worth enabling (one-time, in the GitHub UI)
+## 7. Repository settings (applied on the upstream repository)
 
-- Branch protection on `main`: require the `ci` workflow, require review, no force
-  pushes.
-- Private vulnerability reporting (Security → Advisories) — `SECURITY.md` points
-  there.
-- Dependabot alerts + the `dependabot.yml` in this repo.
-- Releases: keep `Immutable releases` on so published assets cannot be silently
-  replaced.
-- Actions: allow only the actions used here (`actions/*`) if your org wants a
-  tighter allow-list.
+These are already enabled on `horizonbymuneeb/liveappinspector`, so this section
+doubles as the checklist for a fork:
+
+- **Branch protection on `main`**: required status checks (strict) - `fmt + clippy +
+  unit tests`, `build + end-to-end acceptance`, `browser UI smoke (Chromium/CDP)`,
+  `build site (strict)`; no force pushes; no deletions; conversation resolution
+  required. Admin bypass is intentionally left on for the sole maintainer.
+- **Private vulnerability reporting** enabled (Security → Advisories), which
+  `SECURITY.md` points at.
+- **Dependabot alerts + automated security fixes**, plus the schedule in
+  `dependabot.yml`.
+- **Secret scanning with push protection** enabled.
+- **Actions allow-list**: only `actions/*`, `github/*` and the one attestation
+  action are used; tighten further in Settings → Actions if your org requires it.
+- **Immutable releases**: deliberately *not* enabled today, because the release
+  workflow can re-publish a tag (idempotent `gh release upload --clobber`). Turn it
+  on once you stop needing that, and remember re-publishing then requires a new
+  tag.
