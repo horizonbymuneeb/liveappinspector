@@ -8,6 +8,38 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Nothing yet.
 
+## [1.0.1] - 2026-11-01
+
+Documentation and distribution patch. No changes to collection code, report
+format or the schema: a 1.0.0 report verifies and parses identically.
+
+### Added
+
+- `docs/README.md` - documentation entry point routing each audience (operator,
+  examiner, parser author, contributor) to the right document.
+- `docs/FAQ.md` - the questions that actually come up: code-integrity blocks,
+  `denied` sections, `type_N` handles, hash mismatches, catalog vs embedded
+  signing, AV quarantine, "does it phone home".
+- `scripts/check-docs.py`, wired into CI: relative links and heading anchors are
+  validated on every push, so documentation cannot rot silently.
+- README: documentation map table.
+
+### Fixed
+
+- **Portable bundle now ships the complete documentation set** (`docs/`,
+  `schema/`, `samples/`, `scripts/`, licence and contributor files). Previously the
+  bundled `README.md` linked to files that were not in the zip (16 dead links);
+  the bundle is verified to have 0 broken relative links.
+- `scripts/install.ps1`: an install no longer fails when a code-integrity policy
+  blocks execution of the just-installed binary; it installs, then explains the
+  block.
+- `scripts/install.ps1`: checksum lookup now works when Windows PowerShell returns
+  `SHA256SUMS.txt` as `byte[]` instead of a string (previously "no checksum
+  published - refusing to install").
+- release workflow: publishing is idempotent (refresh notes/assets when the
+  release exists), `workflow_dispatch` checks out the tag instead of the default
+  branch, and every asset now carries a build provenance attestation.
+
 ## [1.0.0] - 2026-11-01
 
 First public release: a single self-contained `lai.exe` (no runtime, no MSVC
@@ -60,11 +92,6 @@ required) plus an embedded dark dashboard served over loopback.
   sums), one-click launchers, Scoop and winget manifests, GitHub Actions CI and
   release workflows. The portable bundle ships the complete documentation set
   (`docs/`, `schema/`, `samples/`, `scripts/`, licence and contributor files) so
-  every link in the bundled README resolves offline.
-- **Documentation**: `docs/README.md` index, `docs/FAQ.md` for the questions that
-  actually come up (code-integrity blocks, `denied` sections, catalog vs embedded
-  signing, hash mismatches), `docs/SCHEMA.md` + generated JSON Schema, and a
-  CI-enforced link/anchor check (`scripts/check-docs.py`).
 
 ### Fixed
 
@@ -100,5 +127,6 @@ Bugs found by the acceptance suite before the first release:
 - Every collected value is HTML-escaped before it reaches an exhibit; window
   titles, paths and registry keys are attacker-controlled strings.
 
-[Unreleased]: https://github.com/horizonbymuneeb/liveappinspector/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/horizonbymuneeb/liveappinspector/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/horizonbymuneeb/liveappinspector/releases/tag/v1.0.1
 [1.0.0]: https://github.com/horizonbymuneeb/liveappinspector/releases/tag/v1.0.0
