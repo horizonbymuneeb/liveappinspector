@@ -121,14 +121,23 @@ Get-ChildItem (Join-Path $root 'tests\*.js') -ErrorAction SilentlyContinue |
 Get-ChildItem (Join-Path $root '*.cmd') -ErrorAction SilentlyContinue |
     ForEach-Object { Copy-Item $_.FullName $dist -Force }
 
-# Ship the exhibits documentation next to the binary so an operator on a
-# response laptop has the interpretation notes available offline.
-foreach ($doc in @('README.md', 'ARCHITECTURE.md')) {
+# Ship the complete documentation set next to the binary so an operator on a
+# response laptop has the interpretation notes (and the schema) available offline,
+# and every relative link in the copied README still resolves.
+foreach ($doc in @('README.md', 'ARCHITECTURE.md', 'CHANGELOG.md', 'CODE_OF_CONDUCT.md',
+                   'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE')) {
     Copy-Item (Join-Path $root $doc) $dist -Force
 }
+Copy-Item (Join-Path $root 'schema') $dist -Recurse -Force
+New-Item -ItemType Directory -Path (Join-Path $dist 'samples') -Force | Out-Null
+Copy-Item (Join-Path $root 'samples\README.md') (Join-Path $dist 'samples') -Force
+Copy-Item (Join-Path $root 'scripts') $dist -Recurse -Force
 $docDir = Join-Path $dist 'docs'
 if (-not (Test-Path $docDir)) { New-Item -ItemType Directory -Path $docDir | Out-Null }
 Copy-Item (Join-Path $root 'docs\*.md') $docDir -Force
+if (Test-Path (Join-Path $root 'docs\screenshots')) {
+    Copy-Item (Join-Path $root 'docs\screenshots') $docDir -Recurse -Force
+}
 
 $size = [math]::Round((Get-Item (Join-Path $dist 'lai.exe')).Length / 1MB, 2)
 Write-Host ''

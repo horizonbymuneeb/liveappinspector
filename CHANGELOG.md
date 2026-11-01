@@ -58,7 +58,13 @@ required) plus an embedded dark dashboard served over loopback.
   (`tests/e2e.ps1`) and a Chromium-driven UI smoke test (`tests/ui-smoke.js`).
 - **Packaging**: `build.ps1`, `scripts/package.ps1` (portable ZIP + SHA-256
   sums), one-click launchers, Scoop and winget manifests, GitHub Actions CI and
-  release workflows.
+  release workflows. The portable bundle ships the complete documentation set
+  (`docs/`, `schema/`, `samples/`, `scripts/`, licence and contributor files) so
+  every link in the bundled README resolves offline.
+- **Documentation**: `docs/README.md` index, `docs/FAQ.md` for the questions that
+  actually come up (code-integrity blocks, `denied` sections, catalog vs embedded
+  signing, hash mismatches), `docs/SCHEMA.md` + generated JSON Schema, and a
+  CI-enforced link/anchor check (`scripts/check-docs.py`).
 
 ### Fixed
 

@@ -68,9 +68,14 @@ $bundle = Join-Path $stage "lai-$Version-win64"
 New-Item -ItemType Directory -Path $bundle -Force | Out-Null
 
 Copy-Item $exe (Join-Path $bundle 'lai.exe') -Force
-foreach ($f in @('README.md', 'ARCHITECTURE.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md')) {
+foreach ($f in @('README.md', 'ARCHITECTURE.md', 'CHANGELOG.md', 'CODE_OF_CONDUCT.md',
+                 'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE')) {
     Copy-Item (Join-Path $root $f) $bundle -Force
 }
+Copy-Item (Join-Path $root 'schema') $bundle -Recurse -Force
+New-Item -ItemType Directory -Path (Join-Path $bundle 'samples') -Force | Out-Null
+Copy-Item (Join-Path $root 'samples\README.md') (Join-Path $bundle 'samples') -Force
+Copy-Item (Join-Path $root 'scripts') $bundle -Recurse -Force
 Get-ChildItem (Join-Path $root '*.cmd') | ForEach-Object { Copy-Item $_.FullName $bundle -Force }
 New-Item -ItemType Directory -Path (Join-Path $bundle 'docs') -Force | Out-Null
 Copy-Item (Join-Path $root 'docs\*.md') (Join-Path $bundle 'docs') -Force

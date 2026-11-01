@@ -55,6 +55,12 @@ jobs:
         working-directory: engine
         run: cargo test --release
 
+      - name: Documentation link check
+        shell: pwsh
+        run: |
+          python scripts/check-docs.py
+          if ($LASTEXITCODE -ne 0) { throw 'documentation has broken links or anchors' }
+
   # Builds the shipped binary and proves it works by running the acceptance suite.
   acceptance:
     name: build + end-to-end acceptance

@@ -5,7 +5,7 @@
 [![downloads](https://img.shields.io/github/downloads/horizonbymuneeb/liveappinspector/total)](https://github.com/horizonbymuneeb/liveappinspector/releases)
 [![license](https://img.shields.io/github/license/horizonbymuneeb/liveappinspector)](LICENSE)
 [![platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20x64-0078D6)](#)
-[![rust](https://img.shields.io/badge/rust-1.75%2B-orange)](engine/Cargo.toml)
+[![rust](https://img.shields.io/badge/rust-1.75%2B-orange)](https://github.com/horizonbymuneeb/liveappinspector/blob/main/engine/Cargo.toml)
 
 **Point-and-shoot live application forensics for Windows.** Press a hotkey, click
 a window, get a sealed forensic report about the process behind it.
@@ -64,6 +64,23 @@ Verify before you run it — this tool reads your machine, so trust nothing unve
 > blocked by Smart App Control / WDAC / AppLocker. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ---
+
+## Documentation
+
+Full index: [docs/README.md](docs/README.md). Every relative link and heading
+anchor is checked in CI ([scripts/check-docs.py](https://github.com/horizonbymuneeb/liveappinspector/blob/main/scripts/check-docs.py)), so the
+map below cannot rot.
+
+| Document | What it answers |
+|---|---|
+| [docs/FAQ.md](docs/FAQ.md) | "Windows blocked it", "why is this `denied`", `type_56` handles, hash mismatch, catalog vs embedded signing, AV quarantine |
+| [docs/FORENSIC_NOTES.md](docs/FORENSIC_NOTES.md) | per-field provenance, caveats, false-positive guidance for every artifact |
+| [docs/CHAIN_OF_CUSTODY.md](docs/CHAIN_OF_CUSTODY.md) | seal algorithm, manual verification recipe, what the seal does and does not prove |
+| [docs/SCHEMA.md](docs/SCHEMA.md) + [schema/report-v1.schema.json](schema/report-v1.schema.json) | the machine contract, `status` semantics, versioning policy, `jq` recipes |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | one-click usage, SAC/WDAC/AppLocker blocks, elevation, acceptance tests |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | data flow, module map, threading model, failure philosophy, extension points |
+| [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [docs/RELEASING.md](docs/RELEASING.md) | how to change it, how to report a flaw, how a release is cut |
+| [CHANGELOG.md](CHANGELOG.md) | what changed, including every bug the test suite caught before 1.0.0 |
 
 ## 0. The UI
 
