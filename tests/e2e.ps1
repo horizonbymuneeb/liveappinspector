@@ -625,7 +625,11 @@ Test-Case 'API rejects a missing/invalid token (401)' {
 Test-Case 'GET /api/status reports engine state' {
     $s = Invoke-RestMethod "$base/api/status" -Headers $headers
     if (-not $s.ok) { throw 'not ok' }
-    if ($s.version -ne '1.0.0') { throw "version $($s.version)" }
+    # Never hardcode the version: compare the API against the binary itself, so a
+    # release bump cannot break the suite (it did, on 1.0.1).
+    $cliVersion = ((Invoke-Lai @('--version')).Stdout -replace '^LiveAppInspector\s+', '').Trim()
+    if ($s.version -ne $cliVersion) { throw "status reports $($s.version), binary is $cliVersion" }
+    if ($s.version -notmatch '^\d+\.\d+\.\d+') { throw "unexpected version format: $($s.version)" }
     if ($s.hotkey -ne 'Ctrl+Alt+F') { throw "hotkey $($s.hotkey)" }
     "host=$($s.host) os=$($s.os) elevated=$($s.engine_elevated) hotkey-listener=$($s.hotkey_listener)"
 }
