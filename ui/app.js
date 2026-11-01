@@ -205,6 +205,7 @@ function renderSidebar() {
   $('cModules').textContent = r.modules.count || 0;
   $('cHandles').textContent = r.handles.inspected || 0;
   $('cRegistry').textContent = (r.registry.keys || []).length;
+  $('cMemory').textContent = r.memory ? r.memory.private_executable_regions + r.memory.writable_executable_regions : 0;
 }
 
 /* ------------------------------------------------------------------- tabs */
@@ -226,6 +227,7 @@ function renderPanel() {
     modules: renderModules,
     handles: renderHandles,
     registry: renderRegistry,
+    memory: renderMemory,
     integrity: renderIntegrity,
     raw: renderRaw,
   };
@@ -274,7 +276,8 @@ function renderOverview(r) {
   const health = [
     ['Process identity', p.meta], ['User & token', u.meta], ['Genealogy', g.meta],
     ['Network', n.meta], ['Modules', r.modules.meta], ['Handles', r.handles.meta],
-    ['Registry', r.registry.meta], ['Services', r.services.meta], ['Binary integrity', r.binary.meta],
+    ['Registry', r.registry.meta], ['Services', r.services.meta], ['Memory anomalies', r.memory.meta],
+    ['Binary integrity', r.binary.meta],
   ];
 
   return `
@@ -494,6 +497,34 @@ function renderHandles(r) {
     esc(i.object_name || (i.target_pid ? `pid ${i.target_pid}` : '')),
     esc(i.granted_access), esc(i.note || ''),
   ]))}`;
+}
+
+/* ---------------------------------------------------------------- memory */
+
+function renderMemory(r) {
+  const m = r.memory || { meta: {}, anomalies: [] };
+  const rwx = m.writable_executable_regions || 0;
+  const execPriv = m.private_executable_regions || 0;
+  return `
+  ${sectionHead('Address space & memory anomalies', m.meta)}
+  ${kv([
+    ['Regions scanned', esc(m.regions_scanned)],
+    ['Committed regions', esc(m.committed_regions)],
+    ['Committed bytes', bytes(m.committed_bytes)],
+    ['Image-backed', bytes(m.image_bytes)],
+    ['File-mapped', bytes(m.mapped_bytes)],
+    ['Private', bytes(m.private_bytes)],
+    ['Executable regions', `${esc(m.executable_regions)} (${bytes(m.executable_bytes)})`],
+    ['Executable private', `<span style="color:${execPriv ? 'var(--warn)' : 'inherit'}">${esc(execPriv)}</span> (${bytes(m.private_executable_bytes)})`],
+    ['Writable + executable', `<span style="color:${rwx ? 'var(--err)' : 'inherit'}">${esc(rwx)}</span> (${bytes(m.writable_executable_bytes)})`],
+  ])}
+  <div class="note">Private executable memory is not backed by any image on disk. Legitimate for CLR/JIT, browser, Go and Java runtimes; an indicator worth correlating with unsigned modules, network activity and thread start addresses. Facts, not a verdict.</div>
+  ${(m.anomalies || []).length
+    ? `<div class="sectionhead"><h2>Anomalous regions (${esc(m.anomalies_shown)} shown, largest first)</h2></div>
+       ${table(['Base address', 'Size', 'Protection', 'Type', 'Note'], m.anomalies.map((a) => [
+         esc(a.base_address), bytes(a.size_bytes), esc(a.protection), esc(a.region_type), esc(a.note),
+       ]))}`
+    : '<div class="note">No executable private or writable+executable regions at collection time.</div>'}`;
 }
 
 /* -------------------------------------------------------------- registry */

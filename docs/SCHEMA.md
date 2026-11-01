@@ -30,6 +30,7 @@ lai verify report.json                             # recompute the seal
 | `handles` | object | Module E — `items[]` (handle, type, classifier, object name, access, `target_pid`) and `counts_by_type[]` |
 | `registry` | object | Module E — `keys[]` held open, `autoruns[]` referencing the image, scan notes |
 | `services` | object | Module E — `services[]` from the SCM (hosted by or registered to this image) |
+| `memory` | object | Module G — address-space walk: committed/image/mapped/private bytes, executable and writable+executable region counters, `anomalies[]` (base, size, protection, type, note) |
 | `binary` | object | Module F — SHA-256, NTFS identity, PE facts, Authenticode/catalog trust, hashing metadata |
 | `integrity` | object | seal, custody log, section health, warnings |
 

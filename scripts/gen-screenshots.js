@@ -84,6 +84,7 @@ const shoot = async (c, file) => {
     ['identity', 'dashboard-identity.png'],
     ['network', 'dashboard-network.png'],
     ['handles', 'dashboard-handles.png'],
+    ['memory', 'dashboard-memory.png'],
     ['integrity', 'dashboard-integrity.png'],
   ];
   for (const [tab, file] of tabs) {

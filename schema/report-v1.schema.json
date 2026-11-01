@@ -910,24 +910,50 @@
             },
             "collected_at_utc": {
               "type": "string"
-            },
-            "warnings": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
             }
           },
           "required": [
             "collected_at_utc",
-            "status",
-            "warnings"
+            "status"
           ]
         },
         "connections": {
           "type": "array",
-          "items": {},
-          "description": "empty at capture time - item shape not inferable"
+          "items": {
+            "type": "object",
+            "properties": {
+              "protocol": {
+                "type": "string"
+              },
+              "local_address": {
+                "type": "string"
+              },
+              "local_port": {
+                "type": "integer"
+              },
+              "remote_address": {
+                "type": "string"
+              },
+              "remote_port": {
+                "type": "integer"
+              },
+              "state": {
+                "type": "string"
+              },
+              "state_code": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "local_address",
+              "local_port",
+              "protocol",
+              "remote_address",
+              "remote_port",
+              "state",
+              "state_code"
+            ]
+          }
         },
         "tcp_count": {
           "type": "integer"
@@ -1127,11 +1153,11 @@
               "object_address": {
                 "type": "string"
               },
-              "target_pid": {
-                "type": "integer"
-              },
               "note": {
                 "type": "string"
+              },
+              "target_pid": {
+                "type": "integer"
               }
             },
             "required": [
@@ -1274,6 +1300,123 @@
         "loaded_drivers_match",
         "meta",
         "services"
+      ]
+    },
+    "memory": {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "collected_at_utc": {
+              "type": "string"
+            },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "collected_at_utc",
+            "status",
+            "warnings"
+          ]
+        },
+        "pid": {
+          "type": "integer"
+        },
+        "regions_scanned": {
+          "type": "integer"
+        },
+        "committed_regions": {
+          "type": "integer"
+        },
+        "committed_bytes": {
+          "type": "integer"
+        },
+        "image_bytes": {
+          "type": "integer"
+        },
+        "mapped_bytes": {
+          "type": "integer"
+        },
+        "private_bytes": {
+          "type": "integer"
+        },
+        "executable_regions": {
+          "type": "integer"
+        },
+        "executable_bytes": {
+          "type": "integer"
+        },
+        "private_executable_regions": {
+          "type": "integer"
+        },
+        "private_executable_bytes": {
+          "type": "integer"
+        },
+        "writable_executable_regions": {
+          "type": "integer"
+        },
+        "writable_executable_bytes": {
+          "type": "integer"
+        },
+        "anomalies_shown": {
+          "type": "integer"
+        },
+        "anomalies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "base_address": {
+                "type": "string"
+              },
+              "size_bytes": {
+                "type": "integer"
+              },
+              "protection": {
+                "type": "string"
+              },
+              "region_type": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "base_address",
+              "note",
+              "protection",
+              "region_type",
+              "size_bytes"
+            ]
+          }
+        }
+      },
+      "required": [
+        "anomalies",
+        "anomalies_shown",
+        "committed_bytes",
+        "committed_regions",
+        "executable_bytes",
+        "executable_regions",
+        "image_bytes",
+        "mapped_bytes",
+        "meta",
+        "pid",
+        "private_bytes",
+        "private_executable_bytes",
+        "private_executable_regions",
+        "regions_scanned",
+        "writable_executable_bytes",
+        "writable_executable_regions"
       ]
     },
     "binary": {
@@ -1518,6 +1661,7 @@
     "genealogy",
     "handles",
     "integrity",
+    "memory",
     "modules",
     "network",
     "process",

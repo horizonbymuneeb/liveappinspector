@@ -6,13 +6,42 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.1.0] - 2026-11-02
+
 ### Added
 
+- **Module G - address space and memory anomalies.** A read-only `VirtualQueryEx`
+  walk of the target classifies every committed region (image-backed, file-mapped,
+  private), counts executable, executable-private and writable+executable regions
+  with their byte totals, and lists the largest anomalies with base address,
+  protection and region type. Executable private memory (no image backing on disk)
+  and W+X regions are the cheapest high-signal triage leads for injected or
+  manually mapped code. The section states facts and explicitly does not claim a
+  verdict: CLR/JIT, browser, Go and Java runtimes create such regions normally.
+  Reported as `memory` in JSON, a *Memory* tab in the dashboard, and a section in
+  the HTML exhibit; bounded to 200k regions and the 250 largest anomalies.
 - **Documentation website** at <https://horizonbymuneeb.github.io/liveappinspector/>
   (MkDocs Material, dark/light, full-text search). It is generated from the
   repository markdown by `scripts/build-docs-site.py`, so there is a single source
   of truth, and `.github/workflows/docs.yml` builds it with `mkdocs build --strict`
   so a broken link or nav entry fails the deploy.
+- Unit tests for protection-flag decoding and the executable/writable predicates.
+
+### Changed
+
+- Default handle-resolution cap raised from 5000 to 8000: modern browsers and the
+  shell routinely hold 4-6k handles, so the old default truncated exactly the
+  processes examiners care about (~1.4 s end-to-end, `--handle-cap` overrides).
+- Handle sections no longer degrade to `partial` for a handful of unresolvable
+  object names or object types; a material share (>=5% of names, >=25% of types)
+  is still a warning, and every case is recorded as a note on the section.
+
+### Changed
+
+- Report schema gained an additive section (`memory`); `liveappinspector.report/v1`
+  is unchanged and existing consumers are unaffected (see `docs/SCHEMA.md`).
 
 ## [1.0.1] - 2026-11-01
 
@@ -133,6 +162,7 @@ Bugs found by the acceptance suite before the first release:
 - Every collected value is HTML-escaped before it reaches an exhibit; window
   titles, paths and registry keys are attacker-controlled strings.
 
-[Unreleased]: https://github.com/horizonbymuneeb/liveappinspector/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/horizonbymuneeb/liveappinspector/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/horizonbymuneeb/liveappinspector/releases/tag/v1.1.0
 [1.0.1]: https://github.com/horizonbymuneeb/liveappinspector/releases/tag/v1.0.1
 [1.0.0]: https://github.com/horizonbymuneeb/liveappinspector/releases/tag/v1.0.0

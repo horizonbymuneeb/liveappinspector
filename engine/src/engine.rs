@@ -12,7 +12,7 @@ use std::time::Instant;
 use crate::model::*;
 use crate::util::{self, rfc3339_of, UnixTime};
 use crate::win::{
-    binary, ffi, handles, kernel, modules, net, paths, process, sys, token, tree, window,
+    binary, ffi, handles, kernel, memory, modules, net, paths, process, sys, token, tree, window,
 };
 
 #[derive(Debug, Clone)]
@@ -523,6 +523,32 @@ pub fn inspect(target: &Target, opts: &Options) -> Report {
         format!("services matched={}", services.services.len()),
     );
 
+    // ---------------------------------------------------------------- module G
+    let memory_report = match outcome.process.as_ref() {
+        Some(p) => guard("memory_anomalies", || memory::collect(p, pid)).unwrap_or_else(|e| {
+            custody.log("module_failed", format!("memory_anomalies: {e}"));
+            MemoryReport {
+                meta: SectionMeta::error(e),
+                ..Default::default()
+            }
+        }),
+        None => MemoryReport {
+            meta: SectionMeta::denied("no process handle - address space not walkable"),
+            ..Default::default()
+        },
+    };
+    custody.log(
+        "module_collect",
+        format!(
+            "memory regions={} exec={} rwx={} exec_private={} status={}",
+            memory_report.regions_scanned,
+            memory_report.executable_regions,
+            memory_report.writable_executable_regions,
+            memory_report.private_executable_regions,
+            memory_report.meta.status.as_str()
+        ),
+    );
+
     // ---------------------------------------------------------------- module F
     let binary_info = guard("binary_integrity", || {
         binary::collect(&process_info.image_path, &process_info.image_path_source)
@@ -596,6 +622,7 @@ pub fn inspect(target: &Target, opts: &Options) -> Report {
         handles: handle_list,
         registry,
         services,
+        memory: memory_report,
         binary: binary_info,
         integrity: ReportIntegrity::default(),
     };
@@ -603,7 +630,7 @@ pub fn inspect(target: &Target, opts: &Options) -> Report {
     // Aggregate section health so the UI can show one glanceable verdict.
     let mut warnings: Vec<String> = Vec::new();
     let mut degraded = 0u32;
-    let sections: [(&str, &SectionMeta); 9] = [
+    let sections: [(&str, &SectionMeta); 10] = [
         ("process", &report.process.meta),
         ("user_context", &report.user_context.meta),
         ("genealogy", &report.genealogy.meta),
@@ -612,6 +639,7 @@ pub fn inspect(target: &Target, opts: &Options) -> Report {
         ("handles", &report.handles.meta),
         ("registry", &report.registry.meta),
         ("services", &report.services.meta),
+        ("memory", &report.memory.meta),
         ("binary", &report.binary.meta),
     ];
     for (name, meta) in sections.iter() {

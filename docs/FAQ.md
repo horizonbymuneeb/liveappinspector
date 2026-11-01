@@ -48,7 +48,7 @@ they are cached for the process lifetime).
 
 `handles.inspected` is the number of handle-table entries the kernel returned for
 that PID; `handles.items` is the subset resolved within the cap
-(`--handle-cap`, default 5000) and the per-object time budget (150 ms). Truncation
+(`--handle-cap`, default 8000) and the per-object time budget (150 ms). Truncation
 is recorded (`handles.truncated`, plus a warning). Nothing is silently dropped.
 
 ---
@@ -76,6 +76,26 @@ instead of raising a false timestomping warning. Only a timestamp that is *newer
 than the file's last-write time but still in the past* produces a warning.
 
 ---
+
+### "The memory section shows executable *private* memory — is the process injected?"
+
+Not necessarily, and the report does not claim that. Private executable memory is
+memory that is executable but not backed by an image on disk. It is created
+normally by:
+
+- **CLR / JIT** (.NET, JavaScript engines, PowerShell) — JIT-compiled methods,
+- **browser renderers and Electron apps** — JIT + WASM,
+- **Go / Java runtimes** — their own allocators and garbage collectors,
+- drivers and GPU stacks (thunks, Control-Flow-Guard dispatch tables).
+
+What makes it *interesting* is correlation: an executable private region in a
+process that has no JIT runtime, together with `modules.missing_on_disk`, an
+unsigned image, and an external network connection, is worth a memory capture.
+`writable+executable` (W+X) regions are stronger (no write-then-execute needed) but
+even those appear in production JIT code.
+
+Use the reported `base_address` values with a memory-imaging tool, and check
+`network` / `modules` in the same report before drawing a conclusion.
 
 ### "Is `winlogon.exe` unsigned? The report says `valid` with source `catalog`"
 

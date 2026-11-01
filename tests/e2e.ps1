@@ -255,6 +255,23 @@ Test-Case 'module E: modules + handles + registry' {
     "modules=$($rep.modules.count) (ntdll v$($ntdll.file_version)) handles=$($rep.handles.inspected) named=$($resolved.Count) keys=$($rep.registry.keys.Count)"
 }
 
+Test-Case 'module G: address-space walk produced consistent counters' {
+    $m = $rep.memory
+    if (-not $m) { throw 'no memory section in the report' }
+    if ($m.meta.status -ne 'ok') { throw "status $($m.meta.status): $($m.meta.error)" }
+    if ($m.regions_scanned -lt 10) { throw "only $($m.regions_scanned) regions scanned" }
+    if ($m.committed_regions -lt 5) { throw "committed regions $($m.committed_regions)" }
+    if ($m.committed_bytes -le 0) { throw 'committed bytes is zero' }
+    if ($m.image_bytes -le 0) { throw 'no image-backed bytes although modules are mapped' }
+    if ($m.anomalies.Count -gt 250) { throw "anomaly list not bounded: $($m.anomalies.Count)" }
+    foreach ($a in @($m.anomalies | Select-Object -First 5)) {
+        if ($a.base_address -notmatch '^0x[0-9A-F]{16}$') { throw "bad base address $($a.base_address)" }
+        if ($a.protection -notmatch 'x') { throw "anomaly is not executable: $($a.protection)" }
+        if ($a.size_bytes -le 0) { throw 'zero-sized anomaly' }
+    }
+    "regions=$($m.regions_scanned) committed=$($m.committed_regions) exec=$($m.executable_regions) rwx=$($m.writable_executable_regions) exec-private=$($m.private_executable_regions)"
+}
+
 Test-Case 'module F: SHA-256 matches certutil (independent tool)' {
     $expected = (certutil -hashfile $rep.binary.path SHA256 | Select-Object -Index 1).Trim().ToLower()
     if ($rep.binary.sha256 -ne $expected) { throw "engine=$($rep.binary.sha256) certutil=$expected" }
@@ -366,6 +383,7 @@ Test-Case 'HTML exhibit is self-contained and script-free' {
     $html = Get-Content $htmlPath -Raw
     if ($html -notmatch 'Report seal') { throw 'no seal block' }
     if ($html -notmatch 'Custody log') { throw 'no custody log' }
+    if ($html -notmatch 'Address space &amp; memory anomalies') { throw 'memory section missing from the exhibit' }
     if ($html -match '(?i)<script') { throw 'contains a <script> tag' }
     if ($html -match 'https?://(?!www\.w3\.org)') { throw 'contains an external URL' }
     if ($html -notmatch $rep.binary.sha256) { throw 'binary hash absent' }
@@ -594,6 +612,15 @@ Test-Case 'index ships the token as inert JSON (no executable inline script)' {
     if ($executable.Count -gt 0) { throw "$($executable.Count) executable inline script tag(s) found" }
     if ($html -notmatch 'src="/app.js"') { throw 'app.js not referenced' }
     'token is data, not code; only /app.js executes'
+}
+
+Test-Case 'dashboard exposes the Memory tab and its renderer' {
+    $index = (Invoke-WebRequest "$base/" -UseBasicParsing).Content
+    $js = (Invoke-WebRequest "$base/app.js" -UseBasicParsing).Content
+    if ($index -notmatch 'data-tab="memory"') { throw 'no Memory tab in the dashboard' }
+    if ($js -notmatch 'function renderMemory') { throw 'renderMemory missing from app.js' }
+    if ($js -notmatch 'private_executable_regions') { throw 'app.js does not render the module G counters' }
+    'Memory tab + renderer present'
 }
 
 Test-Case 'hidden panels cannot be overridden by class display rules' {

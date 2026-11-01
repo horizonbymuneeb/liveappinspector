@@ -124,6 +124,7 @@ pub struct Report {
     pub handles: HandleList,
     pub registry: RegistryInfo,
     pub services: ServiceList,
+    pub memory: MemoryReport,
     pub binary: BinaryInfo,
     pub integrity: ReportIntegrity,
 }
@@ -508,6 +509,41 @@ pub struct ServiceInfo {
     pub state: String,
     pub pid: u32,
     pub binary_matches_target: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Module G - memory anomalies (address-space triage)
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct MemoryReport {
+    pub meta: SectionMeta,
+    pub pid: u32,
+    pub regions_scanned: u32,
+    pub committed_regions: u32,
+    pub committed_bytes: u64,
+    pub image_bytes: u64,
+    pub mapped_bytes: u64,
+    pub private_bytes: u64,
+    pub executable_regions: u32,
+    pub executable_bytes: u64,
+    pub private_executable_regions: u32,
+    pub private_executable_bytes: u64,
+    pub writable_executable_regions: u32,
+    pub writable_executable_bytes: u64,
+    /// Largest anomalies first; `anomalies_shown` / counters say if truncated.
+    pub anomalies_shown: u32,
+    pub anomalies: Vec<MemoryAnomaly>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct MemoryAnomaly {
+    pub base_address: String,
+    pub size_bytes: u64,
+    pub protection: String,
+    /// `private` | `mapped` | `image`
+    pub region_type: String,
+    pub note: String,
 }
 
 // ---------------------------------------------------------------------------

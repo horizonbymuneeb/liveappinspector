@@ -25,6 +25,7 @@ pub fn render(report: &Report) -> String {
     handles_section(&mut h, report);
     registry_section(&mut h, report);
     services_section(&mut h, report);
+    memory_section(&mut h, report);
     binary_section(&mut h, report);
     integrity_section(&mut h, report);
     tail(&mut h, report);
@@ -752,6 +753,72 @@ fn services_section(h: &mut String, r: &Report) {
                         x.start_type.clone(),
                         x.account.clone(),
                         x.binary_path.clone(),
+                    ]
+                })
+                .collect(),
+            0,
+        );
+    }
+    end_section(h);
+}
+
+fn memory_section(h: &mut String, r: &Report) {
+    let m = &r.memory;
+    section(h, "memory", "Address space & memory anomalies", &m.meta);
+    kv(
+        h,
+        &[
+            ("Regions scanned", m.regions_scanned.to_string()),
+            ("Committed regions", m.committed_regions.to_string()),
+            ("Committed bytes", human_bytes(m.committed_bytes)),
+            ("Image-backed", human_bytes(m.image_bytes)),
+            ("File-mapped", human_bytes(m.mapped_bytes)),
+            ("Private", human_bytes(m.private_bytes)),
+            (
+                "Executable regions",
+                format!(
+                    "{} ({})",
+                    m.executable_regions,
+                    human_bytes(m.executable_bytes)
+                ),
+            ),
+            (
+                "Executable private",
+                format!(
+                    "{} ({})",
+                    m.private_executable_regions,
+                    human_bytes(m.private_executable_bytes)
+                ),
+            ),
+            (
+                "Writable + executable",
+                format!(
+                    "{} ({})",
+                    m.writable_executable_regions,
+                    human_bytes(m.writable_executable_bytes)
+                ),
+            ),
+        ],
+    );
+    h.push_str(r#"<p class="note">Private executable memory is not backed by any image on disk. It is legitimate for CLR/JIT, browser, Go and Java runtimes, and an indicator worth correlating elsewhere (unsigned modules, network activity, thread start addresses). This table records facts, not a verdict.</p>"#);
+    if !m.anomalies.is_empty() {
+        h.push_str(&format!(
+            "<h3>Anomalous regions ({} largest of {})</h3>",
+            m.anomalies_shown,
+            m.anomalies.len().max(m.anomalies_shown as usize)
+        ));
+        table(
+            h,
+            &["Base address", "Size", "Protection", "Type", "Note"],
+            m.anomalies
+                .iter()
+                .map(|a| {
+                    vec![
+                        a.base_address.clone(),
+                        human_bytes(a.size_bytes),
+                        a.protection.clone(),
+                        a.region_type.clone(),
+                        a.note.clone(),
                     ]
                 })
                 .collect(),

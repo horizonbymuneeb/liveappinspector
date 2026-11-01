@@ -50,6 +50,15 @@ does not mean**.
 | `registry.autoruns[]` | `Run`, `RunOnce`, `RunServices`, `RunServicesOnce` (HKLM + HKCU + WOW6432Node) and the `Winlogon` execution values | Only entries whose command references this image are included. `REG_EXPAND_SZ` values are expanded. This is a *correlation*, not proof the entry is malicious. |
 | `services.services[]` | `EnumServicesStatusExW(SC_ENUM_PROCESS_INFO)` + `QueryServiceConfigW` | Two matchers, both recorded: services whose hosted process is this PID, and services whose configured image path is this binary (persistence even when dormant). Service binary paths often include arguments; they are stripped before comparison and the raw value is preserved. |
 
+## G. Address space / memory anomalies
+
+| Field | Source | Caveats |
+|---|---|---|
+| `memory.regions_scanned`, `committed_*`, `image_bytes`, `mapped_bytes`, `private_bytes` | `VirtualQueryEx` walk of the target's address space | A snapshot: regions can be allocated/freed between the walk and the report. `image_bytes` counts mapped PE images (modules), not file-backed data. |
+| `memory.executable_regions`, `private_executable_regions`, `writable_executable_regions` (+ byte totals) | Same walk, decoded from `Protect` | `PAGE_GUARD` and `PAGE_NOACCESS` regions are excluded. Private executable memory is **normal** for CLR/JIT, browser, Go and Java runtimes — see FAQ. Counters are complete even when the anomaly list is truncated. |
+| `memory.anomalies[]` | Regions that are executable **and** (private or writable), largest first, capped at 250 | Facts only: base address, size, protection, region type. No verdict is claimed, because a verdict needs relocation-aware comparison of mapped bytes against the on-disk image, which this tool deliberately does not do. Use the addresses with a memory-imaging tool. |
+| `memory.meta.status = denied` | Handle lacks `PROCESS_QUERY_INFORMATION` + `PROCESS_VM_READ` | Elevated engine or `SeDebugPrivilege` needed; protected processes refuse even that. |
+
 ## F. Binary integrity
 
 | Field | Source | Caveats |

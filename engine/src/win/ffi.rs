@@ -1594,3 +1594,54 @@ pub fn version_api() -> Option<&'static VersionApi> {
     })
     .as_ref()
 }
+
+// ---------------------------------------------------------------------------
+// Virtual memory inspection (Module G)
+// ---------------------------------------------------------------------------
+pub const MEM_COMMIT: u32 = 0x0000_1000;
+pub const MEM_RESERVE: u32 = 0x0000_2000;
+pub const MEM_FREE: u32 = 0x0001_0000;
+pub const MEM_PRIVATE: u32 = 0x0002_0000;
+pub const MEM_MAPPED: u32 = 0x0004_0000;
+pub const MEM_IMAGE: u32 = 0x0100_0000;
+
+pub const PAGE_NOACCESS: u32 = 0x001;
+pub const PAGE_READONLY: u32 = 0x002;
+pub const PAGE_READWRITE: u32 = 0x004;
+pub const PAGE_WRITECOPY: u32 = 0x008;
+pub const PAGE_EXECUTE: u32 = 0x010;
+pub const PAGE_EXECUTE_READ: u32 = 0x020;
+pub const PAGE_EXECUTE_READWRITE: u32 = 0x040;
+pub const PAGE_EXECUTE_WRITECOPY: u32 = 0x080;
+pub const PAGE_GUARD: u32 = 0x100;
+pub const PAGE_NOCACHE: u32 = 0x200;
+pub const PAGE_WRITECOMBINE: u32 = 0x400;
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct MEMORY_BASIC_INFORMATION {
+    pub BaseAddress: *mut c_void,
+    pub AllocationBase: *mut c_void,
+    pub AllocationProtect: u32,
+    pub PartitionId: u16,
+    pub RegionSize: usize,
+    pub State: u32,
+    pub Protect: u32,
+    pub Type: u32,
+}
+
+impl Default for MEMORY_BASIC_INFORMATION {
+    fn default() -> Self {
+        unsafe { std::mem::zeroed() }
+    }
+}
+
+#[link(name = "kernel32")]
+extern "system" {
+    pub fn VirtualQueryEx(
+        hProcess: HANDLE,
+        lpAddress: *const c_void,
+        lpBuffer: *mut MEMORY_BASIC_INFORMATION,
+        dwLength: usize,
+    ) -> usize;
+}

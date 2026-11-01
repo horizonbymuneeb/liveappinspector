@@ -48,7 +48,7 @@ TARGET SELECTION
 
 COLLECTION OPTIONS
   --no-handles       skip handle-table enumeration (much faster, less evidence)
-  --handle-cap N     maximum handles to resolve (default 5000)
+  --handle-cap N     maximum handles to resolve (default 8000)
   --resolve-dns      reverse-resolve remote endpoints (adds latency, off by default)
 
 REPORTING
@@ -142,7 +142,7 @@ fn number(args: &[String], name: &str) -> Option<u32> {
 
 fn build_options(args: &[String]) -> engine::Options {
     engine::Options {
-        handle_cap: number(args, "--handle-cap").unwrap_or(5000),
+        handle_cap: number(args, "--handle-cap").unwrap_or(win::handles::DEFAULT_HANDLE_CAP),
         include_handles: !flag(args, "--no-handles"),
         resolve_dns: flag(args, "--resolve-dns"),
         case: CaseInfo {

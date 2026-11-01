@@ -24,7 +24,11 @@ use super::tree;
 use crate::model::*;
 use crate::util::{self, WinError};
 
-pub const DEFAULT_HANDLE_CAP: u32 = 5000;
+/// Default resolution cap. Modern browsers and the shell routinely hold 4-6k
+/// handles, so a 5000 cap truncates the very processes examiners care about.
+/// 8000 covers the common case at ~1.4 s end-to-end; `--handle-cap` overrides it
+/// and truncation is always recorded in the report.
+pub const DEFAULT_HANDLE_CAP: u32 = 8000;
 const NAME_TIMEOUT_MS: u64 = 150;
 const NT_SUCCESS: i32 = 0;
 
@@ -405,8 +409,22 @@ pub fn collect(proc: &Process, pid: u32, cap: u32) -> HandleList {
         ));
     }
     if unresolved > 0 {
-        out.meta
-            .warn(format!("{unresolved} object names were not resolvable"));
+        // One unresolvable name out of thousands is normal (a device object, a
+        // stale handle) and must not mark the whole section partial. Only a
+        // material share of failures is worth degrading on.
+        let share = if out.items.is_empty() {
+            100
+        } else {
+            unresolved * 100 / out.items.len() as u32
+        };
+        if share >= 5 {
+            out.meta.warn(format!(
+                "{unresolved} object names were not resolvable ({share}% of the table)"
+            ));
+        } else {
+            out.meta
+                .note(format!("{unresolved} object name(s) were not resolvable"));
+        }
     }
 
     // An opaque `type_N` means neither this process's handle nor any other

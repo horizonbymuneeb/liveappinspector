@@ -6,6 +6,7 @@ pub mod dpi;
 pub mod ffi;
 pub mod handles;
 pub mod kernel;
+pub mod memory;
 pub mod modules;
 pub mod net;
 pub mod paths;
