@@ -1,0 +1,20 @@
+# Normalise line endings in the repository, not on checkout.
+* text=auto eol=lf
+
+# Windows-only project: keep scripts runnable by cmd.exe/PowerShell.
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# Binaries
+*.exe   binary
+*.dll   binary
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.zip   binary
+*.cat   binary
+
+# Generated / vendored
+engine/Cargo.lock linguist-generated=false
+dist/** linguist-vendored

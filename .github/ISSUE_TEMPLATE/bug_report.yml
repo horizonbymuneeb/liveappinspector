@@ -1,0 +1,70 @@
+name: Bug report
+description: Something collected the wrong artifact, degraded unexpectedly, or crashed
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste real case data.** Redact host names, accounts, SIDs, paths,
+        remote addresses and hashes before submitting. For anything that might be a
+        vulnerability, use SECURITY.md instead of a public issue.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `lai --version`
+      placeholder: LiveAppInspector 1.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: elevated
+    attributes:
+      label: Was the engine elevated?
+      options:
+        - "No (standard user)"
+        - "Yes (Run as administrator)"
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: Target
+      description: What were you inspecting? (generic description, e.g. "Chromium-based browser", "SYSTEM service host")
+      placeholder: 64-bit GUI application, session 1
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      render: powershell
+      placeholder: .\lai.exe inspect --pid 1234 --json out.json
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: section
+    attributes:
+      label: Affected report section
+      description: Paste the section's `meta.status` / `meta.error` / `meta.warnings` (redacted)
+      render: json
+  - type: input
+    id: selfcheck
+    attributes:
+      label: Engineless diagnostics
+      description: Relevant fields from `lai self-check` (os_build, arch, dpi_awareness, computer can be redacted)
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have redacted all case and host data from this report.
+          required: true
+        - label: This is not a security vulnerability (those go through SECURITY.md).
+          required: true

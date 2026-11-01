@@ -1,0 +1,15 @@
+# Build output
+/engine/target/
+/dist/
+
+# Local exhibits and test scratch (may contain host artifacts)
+/out/
+*.json.tmp
+*.html.tmp
+samples/*.json
+samples/*.html
+
+# Editor
+.vs/
+.vscode/
+*.user

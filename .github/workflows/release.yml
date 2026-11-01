@@ -1,0 +1,110 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: build, package, publish
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: v
+        shell: pwsh
+        run: |
+          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ inputs.tag }}' } else { '${{ github.ref_name }}' }
+          if (-not $tag) { throw 'no tag resolved' }
+          $ver = $tag.TrimStart('v')
+          $manifest = (Select-String -Path engine/Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+          if ($manifest -ne $ver) { throw "tag $tag does not match Cargo.toml version $manifest" }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$ver" >> $env:GITHUB_OUTPUT
+          "Building $tag (manifest $manifest)"
+
+      - name: Install GNU Rust toolchain
+        shell: pwsh
+        run: |
+          rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal
+          rustup default stable-x86_64-pc-windows-gnu
+
+      - name: Format, lint, test
+        working-directory: engine
+        shell: pwsh
+        run: |
+          rustup component add rustfmt clippy
+          cargo fmt --all -- --check
+          cargo clippy --release --all-targets -- -D warnings
+          cargo test --release
+
+      - name: Build release binary
+        working-directory: engine
+        run: cargo build --release
+
+      - name: Acceptance suite (headless subset)
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "engine/target/release/lai.exe").Path
+          powershell -NoProfile -ExecutionPolicy Bypass -File tests/e2e.ps1 -Exe $exe -SkipPicker
+          if ($LASTEXITCODE -ne 0) { throw "acceptance suite failed ($LASTEXITCODE)" }
+
+      - name: Package portable bundle + checksums
+        shell: pwsh
+        run: |
+          .\scripts\package.ps1 -Version '${{ steps.v.outputs.version }}'
+          Get-ChildItem dist\*.zip, dist\SHA256SUMS.txt, dist\lai.exe | Select-Object Name, Length
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = '${{ steps.v.outputs.tag }}'
+          $ver = '${{ steps.v.outputs.version }}'
+          # Release notes = the matching CHANGELOG section.
+          $notes = "release-notes.md"
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String -SimpleMatch "## [$ver]" | Select-Object -First 1).LineNumber
+          if ($start) {
+            $body = $lines[$start..($lines.Count - 1)]
+            $end = ($body | Select-String -Pattern '^## \[' | Select-Object -Skip 1 -First 1).LineNumber
+            if ($end) { $body = $body[0..($end - 2)] }
+            $body -join "`n" | Set-Content $notes -Encoding utf8
+          } else {
+            "Release $tag" | Set-Content $notes -Encoding utf8
+          }
+          "`n### Assets`n" | Add-Content $notes -Encoding utf8
+          "- ``lai-$ver-win64.zip`` - portable build (binary, launchers, docs, tests)" | Add-Content $notes -Encoding utf8
+          "- ``lai.exe`` - standalone engine (same binary, for scripting)" | Add-Content $notes -Encoding utf8
+          "- ``SHA256SUMS.txt`` - verify before running" | Add-Content $notes -Encoding utf8
+          "`n### Verify`n``````powershell`n(Get-FileHash .\lai.exe -Algorithm SHA256).Hash.ToLower()`n``````" | Add-Content $notes -Encoding utf8
+
+          gh release create $tag `
+            --title "LiveAppInspector $ver" `
+            --notes-file $notes `
+            --latest `
+            "dist/lai-$ver-win64.zip" "dist/lai.exe" "dist/SHA256SUMS.txt"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.v.outputs.version }}
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          retention-days: 30

@@ -1,0 +1,169 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Formatting, lints and unit tests: fast feedback, no artifacts.
+  verify:
+    name: fmt + clippy + unit tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GNU Rust toolchain (MSVC is not required)
+        shell: pwsh
+        run: |
+          rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component rustfmt --component clippy
+          rustup default stable-x86_64-pc-windows-gnu
+          rustc --version
+          cargo --version
+
+      - name: Cache cargo registry and target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engine/target
+          key: ${{ runner.os }}-gnu-cargo-${{ hashFiles('engine/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-gnu-cargo-
+
+      - name: cargo fmt --check
+        working-directory: engine
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy -D warnings
+        working-directory: engine
+        run: cargo clippy --release --all-targets -- -D warnings
+
+      - name: cargo test
+        working-directory: engine
+        run: cargo test --release
+
+  # Builds the shipped binary and proves it works by running the acceptance suite.
+  acceptance:
+    name: build + end-to-end acceptance
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GNU Rust toolchain
+        shell: pwsh
+        run: |
+          rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal
+          rustup default stable-x86_64-pc-windows-gnu
+
+      - name: Cache cargo registry and target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engine/target
+          key: ${{ runner.os }}-gnu-cargo-${{ hashFiles('engine/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-gnu-cargo-
+
+      - name: Build release binary
+        working-directory: engine
+        run: cargo build --release
+
+      - name: CLI smoke
+        shell: pwsh
+        run: |
+          $exe = "engine/target/release/lai.exe"
+          & $exe --version
+          & $exe self-check | ConvertFrom-Json | Format-List version, schema, os, arch, dpi_awareness, elevated
+          & $exe procs --limit 5
+          & $exe hash $exe --json | Out-Null
+          "smoke: ok"
+
+      - name: End-to-end acceptance (headless subset)
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "engine/target/release/lai.exe").Path
+          powershell -NoProfile -ExecutionPolicy Bypass -File tests/e2e.ps1 -Exe $exe -SkipPicker
+          if ($LASTEXITCODE -ne 0) { throw "acceptance suite failed with exit code $LASTEXITCODE" }
+
+      - name: Stage artifacts
+        shell: pwsh
+        run: |
+          $exe = "engine/target/release/lai.exe"
+          Copy-Item $exe dist/lai.exe -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path out-artifact | Out-Null
+          Copy-Item $exe out-artifact/lai.exe -Force
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: lai-windows-x64
+          path: out-artifact/lai.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  # UI layer: proves a real browser boots the dashboard (HTTP checks cannot).
+  ui-smoke:
+    name: browser UI smoke (Chromium/CDP)
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GNU Rust toolchain
+        shell: pwsh
+        run: |
+          rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal
+          rustup default stable-x86_64-pc-windows-gnu
+
+      - name: Build release binary
+        working-directory: engine
+        run: cargo build --release
+
+      - name: Node + Edge availability
+        shell: pwsh
+        run: |
+          node --version
+          $edge = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
+          if (-not (Test-Path $edge)) { throw "Edge not found at $edge" }
+          "edge: $edge"
+
+      - name: Drive the dashboard with Chromium DevTools Protocol
+        shell: pwsh
+        run: |
+          $exe = "engine/target/release/lai.exe"
+          $log = "engine.log"
+          $p = Start-Process -FilePath $exe -ArgumentList 'serve', '--port', '8787' -RedirectStandardOutput $log -PassThru -NoNewWindow
+          Start-Sleep -Seconds 4
+          $token = $null
+          for ($i = 0; $i -lt 30 -and -not $token; $i++) {
+            $m = [regex]::Match((Get-Content $log -Raw), 'session token:\s*([0-9a-f]{32})')
+            if ($m.Success) { $token = $m.Groups[1].Value } else { Start-Sleep -Milliseconds 500 }
+          }
+          if (-not $token) { throw 'engine did not print a session token' }
+          $target = (Get-Process -Id $PID).Id
+          $edge = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
+          $profile = Join-Path $env:TEMP 'lai-ui'
+          # Headless Chromium: no --app mode (it does not create a normal page
+          # target), just the URL plus the DevTools port our script attaches to.
+          Start-Process -FilePath $edge -ArgumentList '--headless=new', 'http://127.0.0.1:8787/', '--remote-debugging-port=9222', "--user-data-dir=$profile", '--no-first-run', '--disable-gpu', '--no-default-browser-check' | Out-Null
+          Start-Sleep -Seconds 8
+          $out = Join-Path $env:TEMP 'lai-shots'
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          node tests/ui-smoke.js $out $target $token
+          if ($LASTEXITCODE -ne 0) { throw "ui smoke failed ($LASTEXITCODE)" }
+          try { Stop-Process -Id $p.Id -Force } catch {}

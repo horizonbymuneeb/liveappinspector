@@ -1,0 +1,59 @@
+name: Feature request
+description: Propose a new artifact, export format or workflow
+title: "[feat] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Forensics tools are judged on evidentiary accuracy. Please describe the
+        **provenance** of the data you want (which API/kernel source provides it,
+        what can make it wrong) - not just the field name.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Investigative problem
+      description: What question could an examiner answer with this that they cannot today?
+    validations:
+      required: true
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Data source and provenance
+      description: |
+        Which Win32/NT API(s)? Is the value authoritative, best-effort, or an
+        inference? What would make it misleading?
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - "A - window/process identity"
+        - "B - user & token"
+        - "C - genealogy"
+        - "D - network"
+        - "E - modules/handles/registry"
+        - "F - integrity & chain of custody"
+        - "New module"
+        - "UI / report rendering"
+        - "Packaging / distribution"
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: How should it degrade?
+      description: What should the section report when access is refused (denied / partial / skipped)?
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints acknowledged
+      options:
+        - label: It can be collected read-only (no writes into the target).
+          required: true
+        - label: It is bounded (iteration caps and timeouts are acceptable).
+          required: true
+        - label: It needs no network egress beyond loopback.
+          required: true

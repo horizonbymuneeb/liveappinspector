@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LiveAppInspector</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="24" height="24"><circle cx="16" cy="16" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 3v6M16 23v6M3 16h6M23 16h6" stroke="currentColor" stroke-width="2"/></svg>
+    </div>
+    <div class="brandtext">
+      <h1>LiveAppInspector</h1>
+      <p>Point-and-shoot live application forensics</p>
+    </div>
+  </div>
+
+  <div class="enginemeta" id="engineMeta">
+    <div class="chip" title="Engine host"><span class="dot" id="engineDot"></span><span id="engineHost">connecting…</span></div>
+    <div class="chip" id="engineIdentity">—</div>
+    <div class="chip priv" id="enginePriv">—</div>
+  </div>
+
+  <div class="topactions">
+    <button class="btn ghost" id="btnElevate" title="Re-launch the engine elevated (UAC)">Elevate engine</button>
+    <button class="btn ghost danger" id="btnShutdown" title="Stop the local engine">Stop</button>
+  </div>
+</header>
+
+<section class="toolbar">
+  <button class="btn primary pick" id="btnPick" title="Ctrl+Alt+F">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5" stroke="currentColor" stroke-width="1.8"/></svg>
+    <span>Pick window</span>
+    <kbd>Ctrl+Alt+F</kbd>
+  </button>
+
+  <div class="divider"></div>
+
+  <div class="pidbox">
+    <input id="pidInput" type="number" inputmode="numeric" placeholder="PID" min="1" autocomplete="off">
+    <button class="btn" id="btnInspectPid">Inspect PID</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="proclist">
+    <button class="btn" id="btnProcs">Processes</button>
+    <div class="dropdown" id="procDropdown" hidden>
+      <input id="procFilter" placeholder="filter by name or pid…" autocomplete="off">
+      <div class="proclistbody" id="procListBody"></div>
+    </div>
+  </div>
+
+  <label class="toggle" title="Reverse-resolve remote endpoints (slower)">
+    <input type="checkbox" id="optDns"><span>Reverse DNS</span>
+  </label>
+  <label class="toggle" title="Skip handle-table enumeration (faster, less evidence)">
+    <input type="checkbox" id="optNoHandles"><span>Skip handles</span>
+  </label>
+
+  <div class="spacer"></div>
+
+  <div class="caseinfo">
+    <input id="caseId" placeholder="Case ID" autocomplete="off">
+    <input id="examiner" placeholder="Examiner" autocomplete="off">
+  </div>
+</section>
+
+<main class="layout">
+  <aside class="sidebar">
+    <div class="targetcard" id="targetCard">
+      <div class="empty">No target captured</div>
+      <p class="hint">Click <strong>Pick window</strong>, then click any application on the desktop. Everything is captured from the live process.</p>
+    </div>
+
+    <div class="exportbox" id="exportBox" hidden>
+      <h3>Export</h3>
+      <button class="btn block" id="btnExportJson">JSON report (sealed)</button>
+      <button class="btn block" id="btnExportHtml">HTML exhibit</button>
+      <button class="btn block ghost" id="btnCopyHash">Copy SHA-256</button>
+    </div>
+
+    <div class="metabox" id="metaBox" hidden>
+      <h3>Acquisition</h3>
+      <dl id="acqList"></dl>
+    </div>
+  </aside>
+
+  <section class="content">
+    <nav class="tabs" id="tabs" hidden>
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="identity">User &amp; Token <span class="count" id="cIdentity"></span></button>
+      <button class="tab" data-tab="tree">Process Tree <span class="count" id="cTree"></span></button>
+      <button class="tab" data-tab="network">Network <span class="count" id="cNetwork"></span></button>
+      <button class="tab" data-tab="modules">Modules <span class="count" id="cModules"></span></button>
+      <button class="tab" data-tab="handles">Handles <span class="count" id="cHandles"></span></button>
+      <button class="tab" data-tab="registry">Registry <span class="count" id="cRegistry"></span></button>
+      <button class="tab" data-tab="integrity">Integrity</button>
+      <button class="tab" data-tab="raw">Raw JSON</button>
+    </nav>
+
+    <div class="panel" id="panel">
+      <div class="welcome">
+        <h2>Ready to acquire</h2>
+        <ol class="steps">
+          <li><strong>Pick a window</strong> — press <kbd>Ctrl+Alt+F</kbd> or click the crosshair button, then click the target application.</li>
+          <li><strong>Read the dashboard</strong> — identity, token, genealogy, sockets, modules, handles, registry and persistence are correlated to that one process.</li>
+          <li><strong>Export the exhibit</strong> — a sealed JSON report plus a self-contained HTML document with a verifiable chain of custody.</li>
+        </ol>
+        <p class="hint" id="welcomeHint"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="spinner"></div>
+  <p id="overlayText">Working…</p>
+  <button class="btn ghost" id="overlayCancel" hidden>Cancel</button>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<!-- The session token is delivered as inert JSON, not as executable script, so
+     the Content-Security-Policy can stay strict (script-src 'self'). -->
+<script type="application/json" id="laiBoot">{"token":"__LAI_TOKEN__"}</script>
+<script src="/app.js"></script>
+</body>
+</html>
