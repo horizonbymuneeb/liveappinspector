@@ -58,9 +58,15 @@ SHA256SUMS.txt          lower-case sha256 of both assets
 $v = '1.1.0'
 Invoke-WebRequest "https://github.com/horizonbymuneeb/liveappinspector/releases/download/v$v/SHA256SUMS.txt"
 (Get-FileHash .\lai.exe -Algorithm SHA256).Hash.ToLower()   # must match the file above
+gh attestation verify .\lai.exe --repo horizonbymuneeb/liveappinspector   # build provenance
 .\lai.exe --version                                          # must print 1.1.0
 .\lai.exe self-check
 ```
+
+Every release asset carries a **build provenance attestation** (SLSA-style,
+signed by GitHub Actions) linking the file to this repository, the commit and the
+workflow run that produced it. `gh attestation verify` fails if the artefact was
+rebuilt or replaced outside CI.
 
 Then smoke-test the installer path (it re-verifies the checksum itself):
 

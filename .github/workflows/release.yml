@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write        # build provenance attestation
+  attestations: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -22,6 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # workflow_dispatch must build the *tag*, not the default branch.
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           fetch-depth: 0
 
       - name: Resolve version
@@ -69,15 +73,16 @@ jobs:
           .\scripts\package.ps1 -Version '${{ steps.v.outputs.version }}'
           Get-ChildItem dist\*.zip, dist\SHA256SUMS.txt, dist\lai.exe | Select-Object Name, Length
 
-      - name: Publish GitHub release
+      - name: Publish GitHub release (idempotent)
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = '${{ steps.v.outputs.tag }}'
           $ver = '${{ steps.v.outputs.version }}'
-          # Release notes = the matching CHANGELOG section.
           $notes = "release-notes.md"
+
+          # Release notes = the matching CHANGELOG section.
           $lines = Get-Content CHANGELOG.md
           $start = ($lines | Select-String -SimpleMatch "## [$ver]" | Select-Object -First 1).LineNumber
           if ($start) {
@@ -89,16 +94,34 @@ jobs:
             "Release $tag" | Set-Content $notes -Encoding utf8
           }
           "`n### Assets`n" | Add-Content $notes -Encoding utf8
-          "- ``lai-$ver-win64.zip`` - portable build (binary, launchers, docs, tests)" | Add-Content $notes -Encoding utf8
-          "- ``lai.exe`` - standalone engine (same binary, for scripting)" | Add-Content $notes -Encoding utf8
+          "- ``lai-$ver-win64.zip`` - portable bundle (binary, launchers, docs, tests)" | Add-Content $notes -Encoding utf8
+          "- ``lai.exe`` - standalone engine (same bytes as in the zip)" | Add-Content $notes -Encoding utf8
           "- ``SHA256SUMS.txt`` - verify before running" | Add-Content $notes -Encoding utf8
-          "`n### Verify`n``````powershell`n(Get-FileHash .\lai.exe -Algorithm SHA256).Hash.ToLower()`n``````" | Add-Content $notes -Encoding utf8
+          "`n### Verify`n" | Add-Content $notes -Encoding utf8
+          '```powershell' | Add-Content $notes -Encoding utf8
+          '(Get-FileHash .\lai.exe -Algorithm SHA256).Hash.ToLower()   # compare with SHA256SUMS.txt' | Add-Content $notes -Encoding utf8
+          'gh attestation verify .\lai.exe --repo ${{ github.repository }}' | Add-Content $notes -Encoding utf8
+          '```' | Add-Content $notes -Encoding utf8
 
-          gh release create $tag `
-            --title "LiveAppInspector $ver" `
-            --notes-file $notes `
-            --latest `
-            "dist/lai-$ver-win64.zip" "dist/lai.exe" "dist/SHA256SUMS.txt"
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "release $tag exists - refreshing notes and assets"
+            gh release edit $tag --repo $env:GITHUB_REPOSITORY --notes-file $notes
+            gh release upload $tag --repo $env:GITHUB_REPOSITORY --clobber `
+              "dist/lai-$ver-win64.zip" "dist/lai.exe" "dist/SHA256SUMS.txt"
+          } else {
+            gh release create $tag --repo $env:GITHUB_REPOSITORY `
+              --title "LiveAppInspector $ver" --notes-file $notes --latest `
+              "dist/lai-$ver-win64.zip" "dist/lai.exe" "dist/SHA256SUMS.txt"
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'publishing failed' }
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/lai.exe
+            dist/lai-${{ steps.v.outputs.version }}-win64.zip
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
