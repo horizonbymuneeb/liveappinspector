@@ -40,11 +40,18 @@ try {
     Invoke-WebRequest -UseBasicParsing "$base/$asset" -OutFile $zip
 
     Write-Host 'Verifying SHA-256 ...' -ForegroundColor Cyan
-    $sums = (Invoke-WebRequest -UseBasicParsing "$base/SHA256SUMS.txt").Content
-    $expected = ($sums -split "`n" | Where-Object { $_ -match [regex]::Escape($asset) }) -replace '\s+.*$', ''
+    $sumsContent = (Invoke-WebRequest -UseBasicParsing "$base/SHA256SUMS.txt").Content
+    # Windows PowerShell 5.1 may hand back a byte[] here (no charset on the
+    # response), which would silently break the parse into single characters.
+    if ($sumsContent -is [byte[]]) { $sumsContent = [Text.Encoding]::UTF8.GetString($sumsContent) }
+    $expected = ''
+    foreach ($line in ($sumsContent -split "`r?`n")) {
+        $parts = @($line.Trim() -split '\s+' | Where-Object { $_ })
+        if ($parts.Count -ge 2 -and $parts[-1] -eq $asset) { $expected = $parts[0]; break }
+    }
     $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
     if (-not $expected) { throw "no checksum published for $asset - refusing to install" }
-    if ($expected.Trim().ToLower() -ne $actual) { throw "checksum mismatch: expected $expected, got $actual" }
+    if ($expected.ToLower() -ne $actual) { throw "checksum mismatch: expected $expected, got $actual" }
     Write-Host "  ok $actual" -ForegroundColor Green
 
     Write-Host "Installing to $InstallDir ..." -ForegroundColor Cyan
