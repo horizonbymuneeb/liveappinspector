@@ -23,7 +23,7 @@ jobs:
     name: fmt + clippy + unit tests
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install GNU Rust toolchain (MSVC is not required)
         shell: pwsh
@@ -61,7 +61,7 @@ jobs:
     needs: verify
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install GNU Rust toolchain
         shell: pwsh
@@ -122,7 +122,7 @@ jobs:
     needs: verify
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install GNU Rust toolchain
         shell: pwsh
